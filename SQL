@@ -1,0 +1,50 @@
+Option Explicit
+Public WB0 As Workbook, TmpCell As Range
+Public ObjWS_Config As Object, ObjCell_SearchData As Object, ObjWS_Result As Object
+Sub DataQuery()
+    Set WB0 = ActiveWorkbook
+    Set ObjWS_Config = WB0.Worksheets(1)
+    If Not CheckSheet("RES") Then WB0.Worksheets.Add(After:=WB0.Worksheets(WB0.Worksheets.Count)).Name = "RES"
+    Set ObjWS_Result = WB0.Worksheets("RES")
+    Set ObjCell_SearchData = ObjWS_Config.Cells(2, 1).Resize(100)
+    Dim Connection_db As New ADODB.Connection
+    Dim TmpRecordset As New ADODB.Recordset
+    Dim SQL_str$, Connection_str$, iCnt%
+    
+        Connection_str = "Driver={O
+        
+          Connection_db.Open Connection_str
+    Connection_db.CommandTimeout = 800
+    Dim DataString$, QueryOption%
+    For Each TmpCell In ObjCell_SearchData
+        If TmpCell <> "" Then
+            DataString = DataString & " '" & TmpCell.Value & "',"
+                        If Len(TmpCell) = 4 Then QueryOption = 1
+            If Len(TmpCell) = 6 Then QueryOption = 2
+            If Len(TmpCell) = 8 Then QueryOption = 3
+        End If
+    Next TmpCell
+    DataString = Left(DataString, Len(DataString) - 1)
+        SQL_str = SQLCmd(4, DataString)
+    TmpRecordset.Open _
+        Source:=SQL_str, _
+        ActiveConnection:=Connection_db, _
+                CursorType:=adOpenDynamic, _
+        LockType:=adLockReadOnly, _
+        Options:=adCmdText
+            ObjWS_Result.Cells.ClearContents
+    ObjWS_Result.Cells(2, 1).CopyFromRecordset TmpRecordset
+    TmpRecordset.Close
+End Sub
+Function SQLCmd(QueryOption%, DataString$) As String
+    Dim lStr$
+
+    Select Case QueryOption
+        Case 1
+                    lStr = " SELECT PARTID, SUM(QTY)"
+            lStr = lStr & " FROM  mfg_dm.st_wafout_lot t"
+            lStr = lStr & " WHERE  substr(T.CUST,0,4) in ("
+            lStr = lStr & DataString
+                End Select
+    SQLCmd = lStr
+End Function
